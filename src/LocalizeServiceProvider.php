@@ -15,6 +15,7 @@ namespace Alexwaha\Localize;
 use Alexwaha\Localize\Contracts\LanguageProviderInterface;
 use Closure;
 use Illuminate\Contracts\Foundation\Application;
+use Illuminate\Routing\Redirector;
 use Illuminate\Support\Facades\App;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\ServiceProvider;
@@ -22,8 +23,6 @@ use Illuminate\Support\ServiceProvider;
 class LocalizeServiceProvider extends ServiceProvider
 {
     protected static array $localizedRoutes = [];
-
-    protected static array $anyRoutes = [];
 
     public function register(): void
     {
@@ -40,7 +39,7 @@ class LocalizeServiceProvider extends ServiceProvider
         });
     }
 
-    public function boot(LanguageProviderInterface $languageProvider): void
+    public function boot(LanguageProviderInterface $languageProvider, Redirector $redirector): void
     {
         $this->publishes([
             __DIR__.'/../config/localize-routes.php' => App::configPath('localize-routes.php'),
@@ -62,19 +61,15 @@ class LocalizeServiceProvider extends ServiceProvider
             LocalizeServiceProvider::registerLocalizedRoutes($callback, $middleware);
         });
 
-        Route::macro('anyRoutes', function (Closure $callback, array $middleware = []) {
-            LocalizeServiceProvider::registerAnyRoutes($callback, $middleware);
-        });
-
         $this->loadRoutesFrom(App::basePath('routes/web.php'));
 
         foreach ($languageProvider->getLanguages() as $language) {
             if ($language->isDefault()) {
-                foreach (self::$anyRoutes as $route) {
-                    Route::prefix($language->getPrefix())
-                        ->middleware($route['middleware'])
-                        ->group($route['callback']);
-                }
+                Route::prefix($language->getPrefix())->group(function () use ($redirector) {
+                    Route::get('/', fn () => $redirector->to('/', '301'));
+                    Route::get('{any}', fn ($any) => $redirector->to($any, '301'))
+                        ->where('any', '.*');
+                });
             }
 
             foreach (self::$localizedRoutes as $route) {
@@ -89,14 +84,6 @@ class LocalizeServiceProvider extends ServiceProvider
     public static function registerLocalizedRoutes(Closure $callback, array $middleware = []): void
     {
         self::$localizedRoutes[] = [
-            'middleware' => $middleware,
-            'callback' => $callback,
-        ];
-    }
-
-    public static function registerAnyRoutes(Closure $callback, array $middleware = []): void
-    {
-        self::$anyRoutes[] = [
             'middleware' => $middleware,
             'callback' => $callback,
         ];
