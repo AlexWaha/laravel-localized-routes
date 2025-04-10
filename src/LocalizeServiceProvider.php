@@ -59,11 +59,11 @@ class LocalizeServiceProvider extends ServiceProvider
         });
 
         Route::macro('localizedRoutes', function (Closure $callback, array $middleware = []) {
-            self::registerLocalizedRoutes($callback, $middleware);
+            LocalizeServiceProvider::registerLocalizedRoutes($callback, $middleware);
         });
 
         Route::macro('anyRoutes', function (Closure $callback, array $middleware = []) {
-            self::registerAnyRoutes($callback, $middleware);
+            LocalizeServiceProvider::registerAnyRoutes($callback, $middleware);
         });
 
         $this->loadRoutesFrom(App::basePath('routes/web.php'));
@@ -78,7 +78,7 @@ class LocalizeServiceProvider extends ServiceProvider
             }
 
             foreach (self::$localizedRoutes as $route) {
-                Route::prefix($language->getPrefix())
+                Route::prefix($language->isDefault() ? '' : $language->getPrefix())
                     ->middleware($route['middleware'])
                     ->name($language->getCode().'.')
                     ->group($route['callback']);

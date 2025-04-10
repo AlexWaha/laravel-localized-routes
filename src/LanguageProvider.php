@@ -37,7 +37,7 @@ class LanguageProvider implements LanguageProviderInterface
             return new Language(
                 $data['code'],
                 $data['prefix'],
-                $this->config->get('app.locale') === $data['code'],
+                $this->config->get('app.fallback_locale') === $data['code'],
             );
         }, $this->languages);
     }
