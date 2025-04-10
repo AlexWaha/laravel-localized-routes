@@ -1,0 +1,6 @@
+/.idea
+/.nova
+/.vscode
+/.zed
+/vendor
+/composer.lock
