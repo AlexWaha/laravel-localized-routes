@@ -36,7 +36,7 @@ class LocalizeServiceProvider extends ServiceProvider
             $config = $app->get('config');
             $provider = $config->get('localize-routes.language_provider');
 
-            return new $app->make($provider['class'], $provider['params']);
+            return $app->make($provider['class'], $provider['params']);
         });
     }
 
