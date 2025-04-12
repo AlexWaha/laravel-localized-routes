@@ -55,6 +55,8 @@
   "minimum-stability": "dev",
   "prefer-stable": true,
   "config": {
+    "preferred-install": "dist",
+    "sort-packages": true,
     "allow-plugins": {
       "pestphp/pest-plugin": true,
       "phpstan/extension-installer": true
