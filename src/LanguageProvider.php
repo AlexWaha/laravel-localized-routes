@@ -42,14 +42,20 @@ class LanguageProvider implements LanguageProviderInterface
         }, $this->languages);
     }
 
-    public function getLocaleBySegment(string $segment): string
+    public function getLocaleBySegment(?string $segment = null): string
     {
+        $fallbackLocale = $this->config->get('app.fallback_locale');
+
+        if (! $segment) {
+            return $fallbackLocale;
+        }
+
         foreach ($this->getLanguages() as $language) {
             if ($language->getSlug() === $segment) {
                 return $language->getLocale();
             }
         }
 
-        return $this->config->get('app.fallback_locale');
+        return $fallbackLocale;
     }
 }

@@ -19,5 +19,5 @@ interface LanguageProviderInterface
      */
     public function getLanguages(): array;
 
-    public function getLocaleBySegment(string $segment): string;
+    public function getLocaleBySegment(?string $segment = null): string;
 }
