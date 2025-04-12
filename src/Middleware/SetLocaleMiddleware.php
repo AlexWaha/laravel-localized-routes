@@ -14,17 +14,20 @@ namespace Alexwaha\Localize\Middleware;
 
 use Alexwaha\Localize\Contracts\LanguageProviderInterface;
 use Closure;
+use Illuminate\Contracts\Foundation\Application;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\App;
 use Symfony\Component\HttpFoundation\Response;
 
-class SetLocale
+class SetLocaleMiddleware
 {
+    public Application $app;
+
     protected LanguageProviderInterface $languageProvider;
 
-    public function __construct(LanguageProviderInterface $languageProvider)
+    public function __construct(Application $app, LanguageProviderInterface $languageProvider)
     {
         $this->languageProvider = $languageProvider;
+        $this->app = $app;
     }
 
     public function handle(Request $request, Closure $next): Response
@@ -32,7 +35,7 @@ class SetLocale
         $localeSegment = $request->segment(1);
         $locale = $this->languageProvider->getLocaleBySegment($localeSegment);
 
-        App::setLocale($locale);
+        $this->app->setLocale($locale);
 
         return $next($request);
     }

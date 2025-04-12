@@ -88,22 +88,37 @@ Or generate URLs with parameters:
 ```
 
 ### Middleware: `localize.setLocale`
-You must register the `localize.setLocale` middleware to automatically detect and set the application locale based on the first segment of the URL.
+Middleware to automatically detect and set the application locale based on the first segment of the URL.
 
-There are two ways to apply the middleware:
+Registered alias as `localize.setLocale`
 
-➊ Apply Middleware Globally
-You can apply the middleware to a route group manually:
+>Note: If the segment does not match any configured language slug, the application will fall back to the default locale.
+
+➊ Apply Middleware Globally to a middleware group
+
+in **Laravel 10.x** `app\Http\Kernel.php`
 ```php
-Route::middleware(['localize.setLocale'])->group(function () {
-    Route::localizedRoutes(function () {
-        Route::get('/', function () {
-            return view('welcome');
-        });
-    });
-});
+protected $middlewareGroups = [
+        'web' => [
+            \Alexwaha\Localize\Middleware\SetLocale::class,
 ```
-This method gives you full manual control over the middleware stack for your localized routes.
+
+in **Laravel ^11.x** `bootstrap\app.php`
+```php
+    ->withMiddleware(function (Middleware $middleware) {
+        $middleware->group('web', [
+            \Alexwaha\Localize\Middleware\SetLocale::class,,
+        ]);
+    })
+```
+
+```php
+Route::localizedRoutes(function () {
+    Route::get('/', function () {
+        return view('welcome');
+    });
+}, ['web']);
+```
 
 ➋ Apply Middleware Directly in `localizedRoutes`
 You can pass middleware as the second argument to the localizedRoutes macro:
@@ -117,7 +132,7 @@ Route::localizedRoutes(function () {
 ```
 This is a simpler and more compact approach, especially useful for smaller projects.
 
-➌ Pagination-Aware Route Generation
+### Pagination-Aware Route Generation
 When building localized URLs with pagination, you can define your routes like this:
 ```php
 use Illuminate\Support\Facades\Route;
@@ -131,8 +146,6 @@ Route::localizedRoutes(function () {
 }, ['web', 'localize.setLocale']);
 
 ```
-
-If the segment does not match any configured slug, the application will fall back to the default locale.
 
 ### Default Locale Redirection
 

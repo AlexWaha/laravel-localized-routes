@@ -13,13 +13,15 @@
 namespace Alexwaha\Localize;
 
 use Alexwaha\Localize\Contracts\LanguageProviderInterface;
-use Alexwaha\Localize\Middleware\SetLocale;
+use Alexwaha\Localize\Middleware\PaginatedMiddleware;
+use Alexwaha\Localize\Middleware\SetLocaleMiddleware;
 use Closure;
 use Illuminate\Contracts\Foundation\Application;
 use Illuminate\Routing\Redirector;
-use Illuminate\Support\Facades\App;
-use Illuminate\Support\Facades\Route;
+use Illuminate\Routing\Router;
+use Illuminate\Routing\RouteRegistrar;
 use Illuminate\Support\ServiceProvider;
+use Symfony\Component\HttpFoundation\Response;
 
 class LocalizeServiceProvider extends ServiceProvider
 {
@@ -40,43 +42,46 @@ class LocalizeServiceProvider extends ServiceProvider
         });
     }
 
-    public function boot(LanguageProviderInterface $languageProvider, Redirector $redirector): void
+    public function boot(Application $app, Router $router, Redirector $redirector, LanguageProviderInterface $languageProvider): void
     {
         $this->publishes([
-            __DIR__.'/../config/multilang-routes.php' => App::configPath('multilang-routes.php'),
+            __DIR__.'/../config/multilang-routes.php' => $app->configPath('multilang-routes.php'),
         ], 'multilang-routes-config');
 
-        App::get('router')->aliasMiddleware('localize.setLocale', SetLocale::class);
+        $router
+            ->aliasMiddleware('localize.setLocale', SetLocaleMiddleware::class)
+            ->aliasMiddleware('localize.paginated', PaginatedMiddleware::class);
 
-        Route::macro('localize', function (string $name, array $parameters = [], bool $paginated = false) {
-            return App::make(LocalizeUrlGenerator::class)
+        $router->macro('localize', function (string $name, array $parameters = [], bool $paginated = false) use ($app) {
+            return $app->make(LocalizeUrlGenerator::class)
                 ->generate($name, $parameters, $paginated);
         });
 
-        Route::macro('hasLocalize', function (string $name): bool {
-            $locale = App::getLocale();
-            $localizedName = $locale.'.'.$name;
+        $router->macro('hasLocalize', function (string $name) use ($router, $app): bool {
+            $localizedName = $app->getLocale().'.'.$name;
 
-            return Route::has($localizedName) || Route::has($name);
+            return $router->has($localizedName) || $router->has($name);
         });
 
-        Route::macro('localizedRoutes', function (Closure $callback, array $middleware = []) {
+        $router->macro('localizedRoutes', function (Closure $callback, array $middleware = []) {
             LocalizeServiceProvider::registerLocalizedRoutes($callback, $middleware);
         });
 
-        $this->loadRoutesFrom(App::basePath('routes/web.php'));
+        $this->loadRoutesFrom($app->basePath('routes/web.php'));
+
+        $registrar = new RouteRegistrar($router);
 
         foreach ($languageProvider->getLanguages() as $language) {
             if ($language->isDefault()) {
-                Route::prefix($language->getSlug())->group(function () use ($redirector) {
-                    Route::get('/', fn () => $redirector->to('/', '301'));
-                    Route::get('{any}', fn ($any) => $redirector->to($any, '301'))
+                $registrar->prefix($language->getSlug())->group(function () use ($router, $redirector) {
+                    $router->get('/', fn () => $redirector->to('/', Response::HTTP_MOVED_PERMANENTLY));
+                    $router->get('{any}', fn ($any) => $redirector->to($any, Response::HTTP_MOVED_PERMANENTLY))
                         ->where('any', '.*');
                 });
             }
 
             foreach (self::$localizedRoutes as $route) {
-                Route::prefix($language->isDefault() ? '' : $language->getSlug())
+                $registrar->prefix($language->isDefault() ? '' : $language->getSlug())
                     ->middleware($route['middleware'])
                     ->name($language->getLocale().'.')
                     ->group($route['callback']);
