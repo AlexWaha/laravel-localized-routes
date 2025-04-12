@@ -12,24 +12,20 @@
 
 namespace Alexwaha\Localize;
 
-use Illuminate\Contracts\Config\Repository as Config;
+use Illuminate\Contracts\Config\Repository as ConfigContract;
 use Illuminate\Contracts\Routing\UrlGenerator as UrlGeneratorContract;
-use Illuminate\Routing\UrlGenerator;
 use Illuminate\Support\Str;
 
 class LocalizeUrlGenerator
 {
-    public Config $config;
-
-    /**
-     * @var UrlGenerator
-     */
     public UrlGeneratorContract $urlGenerator;
 
-    public function __construct(Config $config, UrlGeneratorContract $urlGenerator)
+    public ConfigContract $config;
+
+    public function __construct(UrlGeneratorContract $urlGenerator, ConfigContract $config)
     {
-        $this->config = $config;
         $this->urlGenerator = $urlGenerator;
+        $this->config = $config;
     }
 
     public function generate(string $name, array $parameters = [], bool $paginated = false): string

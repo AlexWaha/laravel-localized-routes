@@ -54,6 +54,7 @@ class PaginatedMiddleware
             unset($routeParams['page']);
 
             $queryParams = $request->query();
+            unset($queryParams['page']);
 
             $url = $this->urlGenerator->route($canonicalRouteName, $routeParams);
 
