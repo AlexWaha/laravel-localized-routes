@@ -18,4 +18,6 @@ interface LanguageProviderInterface
      * @return array<LanguageInterface>
      */
     public function getLanguages(): array;
+
+    public function getLocaleBySegment(string $segment): string;
 }

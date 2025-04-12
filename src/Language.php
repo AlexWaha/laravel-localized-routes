@@ -16,28 +16,28 @@ use Alexwaha\Localize\Contracts\LanguageInterface;
 
 class Language implements LanguageInterface
 {
-    private string $code;
+    private string $locale;
 
-    private string $prefix;
+    private string $slug;
 
     private bool $isDefault;
 
     public function __construct(
-        string $code, string $prefix, bool $isDefault
+        string $locale, string $slug, bool $isDefault
     ) {
-        $this->code = $code;
-        $this->prefix = $prefix;
+        $this->locale = $locale;
+        $this->slug = $slug;
         $this->isDefault = $isDefault;
     }
 
-    public function getCode(): string
+    public function getLocale(): string
     {
-        return $this->code;
+        return $this->locale;
     }
 
-    public function getPrefix(): string
+    public function getSlug(): string
     {
-        return $this->prefix;
+        return $this->slug;
     }
 
     public function isDefault(): bool

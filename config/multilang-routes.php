@@ -16,8 +16,8 @@ return [
         'params' => [
             'languages' => [
                 [
-                    'code' => 'en',
-                    'prefix' => 'en-gb',
+                    'locale' => 'en',
+                    'slug' => 'en',
                 ],
             ],
         ],

@@ -13,6 +13,7 @@
 namespace Alexwaha\Localize;
 
 use Alexwaha\Localize\Contracts\LanguageProviderInterface;
+use Alexwaha\Localize\Http\Middleware\SetLocale;
 use Closure;
 use Illuminate\Contracts\Foundation\Application;
 use Illuminate\Routing\Redirector;
@@ -27,13 +28,13 @@ class LocalizeServiceProvider extends ServiceProvider
     public function register(): void
     {
         $this->mergeConfigFrom(
-            __DIR__.'/../config/localize-routes.php', 'localize-routes'
+            __DIR__.'/../config/multilang-routes.php', 'multilang-routes'
         );
 
         $this->app->singleton(LocalizeUrlGenerator::class);
         $this->app->singleton(LanguageProviderInterface::class, function (Application $app) {
             $config = $app->get('config');
-            $provider = $config->get('localize-routes.language_provider');
+            $provider = $config->get('multilang-routes.language_provider');
 
             return $app->make($provider['class'], $provider['params']);
         });
@@ -42,8 +43,10 @@ class LocalizeServiceProvider extends ServiceProvider
     public function boot(LanguageProviderInterface $languageProvider, Redirector $redirector): void
     {
         $this->publishes([
-            __DIR__.'/../config/localize-routes.php' => App::configPath('localize-routes.php'),
-        ]);
+            __DIR__.'/../config/multilang-routes.php' => App::configPath('multilang-routes.php'),
+        ], 'multilang-routes-config');
+
+        App::get('router')->aliasMiddleware('localize.setLocale', SetLocale::class);
 
         Route::macro('localize', function (string $name, array $parameters = [], bool $paginated = false) {
             return App::make(LocalizeUrlGenerator::class)
@@ -65,7 +68,7 @@ class LocalizeServiceProvider extends ServiceProvider
 
         foreach ($languageProvider->getLanguages() as $language) {
             if ($language->isDefault()) {
-                Route::prefix($language->getPrefix())->group(function () use ($redirector) {
+                Route::prefix($language->getSlug())->group(function () use ($redirector) {
                     Route::get('/', fn () => $redirector->to('/', '301'));
                     Route::get('{any}', fn ($any) => $redirector->to($any, '301'))
                         ->where('any', '.*');
@@ -73,9 +76,9 @@ class LocalizeServiceProvider extends ServiceProvider
             }
 
             foreach (self::$localizedRoutes as $route) {
-                Route::prefix($language->isDefault() ? '' : $language->getPrefix())
+                Route::prefix($language->isDefault() ? '' : $language->getSlug())
                     ->middleware($route['middleware'])
-                    ->name($language->getCode().'.')
+                    ->name($language->getLocale().'.')
                     ->group($route['callback']);
             }
         }

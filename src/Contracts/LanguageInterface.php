@@ -14,9 +14,9 @@ namespace Alexwaha\Localize\Contracts;
 
 interface LanguageInterface
 {
-    public function getCode(): string;
+    public function getLocale(): string;
 
-    public function getPrefix(): string;
+    public function getSlug(): string;
 
     public function isDefault(): bool;
 }
