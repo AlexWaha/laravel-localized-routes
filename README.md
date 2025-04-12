@@ -88,9 +88,12 @@ Or generate URLs with parameters:
 ```
 
 ### Middleware: `localize.setLocale`
-This package provides a middleware that automatically sets the locale based on the URL.
+You must register the `localize.setLocale` middleware to automatically detect and set the application locale based on the first segment of the URL.
 
-Register the middleware in your routes:
+There are two ways to apply the middleware:
+
+➊ Apply Middleware Globally
+You can apply the middleware to a route group manually:
 ```php
 Route::middleware(['localize.setLocale'])->group(function () {
     Route::localizedRoutes(function () {
@@ -100,7 +103,10 @@ Route::middleware(['localize.setLocale'])->group(function () {
     });
 });
 ```
-Or
+This method gives you full manual control over the middleware stack for your localized routes.
+
+➋ Apply Middleware Directly in `localizedRoutes`
+You can pass middleware as the second argument to the localizedRoutes macro:
 
 ```php
 Route::localizedRoutes(function () {
@@ -109,7 +115,22 @@ Route::localizedRoutes(function () {
     });
 }, ['web', 'localize.setLocale']);
 ```
-The middleware uses the first segment of the URL to detect the locale.
+This is a simpler and more compact approach, especially useful for smaller projects.
+
+➌ Pagination-Aware Route Generation
+When building localized URLs with pagination, you can define your routes like this:
+```php
+use Illuminate\Support\Facades\Route;
+
+Route::localizedRoutes(function () {
+    Route::name('blog.')->prefix('/blog')->group(function () {
+        Route::get('', [BlogController::class, 'index'])->name('index');
+        Route::get('/page/{page?}', [BlogController::class, 'index'])->name('paginated');
+        Route::get('/{post}', [BlogController::class, 'show'])->name('show');
+    });
+}, ['web', 'localize.setLocale']);
+
+```
 
 If the segment does not match any configured slug, the application will fall back to the default locale.
 
@@ -151,7 +172,65 @@ return [
     ],
 ];
 ```
-You can also customize the language provider by replacing `language_provider.class` in the config.
+You can customize the list of supported languages and their URL prefixes or create your own Language Provider.
+
+If you want full control over how languages are loaded (for example, from a database), you can create a custom provider by implementing the `LanguageProviderInterface` and specify your class in the configuration.
+
+Example `config/multilang-routes.php`:
+```php
+return [
+    'language_provider' => [
+        'class' => App\Providers\CustomLanguageProvider::class,
+    ],
+];
+```
+Your custom provider should implement:
+```php
+interface LanguageProviderInterface
+{
+    public function getLanguages(): array;
+    public function getLocaleBySegment(string $segment): string;
+}
+```
+This gives you the flexibility to load languages from the database, API, or any other source.
+
+Example of `app/Providers/DatabaseLanguageProvider.php`
+
+```php
+<?php
+
+namespace App\Providers;
+
+use App\Contracts\LanguageProviderInterface;
+use App\Contracts\LanguageInterface;
+use App\Models\Language;
+
+class DatabaseLanguageProvider implements LanguageProviderInterface
+{
+    /**
+     * @return array<LanguageInterface>
+     */
+    public function getLanguages(): array
+    {
+        $languages = Language::all();
+
+        return array_map(function (Language $language) {
+            return new \Alexwaha\Localize\Language(
+                $language->locale,
+                $language->slug,
+                $language->is_default
+            );
+        }, $languages->all());
+    }
+
+    public function getLocaleBySegment(string $segment): string
+    {
+        $language = Language::where('slug', $segment)->first();
+
+        return $language?->locale ?? config('app.fallback_locale');
+    }
+}
+```
 
 ## Requirements
 

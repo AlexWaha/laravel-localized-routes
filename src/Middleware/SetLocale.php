@@ -10,7 +10,7 @@
  * @license MIT
  */
 
-namespace Alexwaha\Localize\Http\Middleware;
+namespace Alexwaha\Localize\Middleware;
 
 use Alexwaha\Localize\Contracts\LanguageProviderInterface;
 use Closure;

@@ -13,7 +13,7 @@
 namespace Alexwaha\Localize;
 
 use Alexwaha\Localize\Contracts\LanguageProviderInterface;
-use Alexwaha\Localize\Http\Middleware\SetLocale;
+use Alexwaha\Localize\Middleware\SetLocale;
 use Closure;
 use Illuminate\Contracts\Foundation\Application;
 use Illuminate\Routing\Redirector;
