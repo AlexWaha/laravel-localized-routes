@@ -16,7 +16,7 @@ Simple and lightweight package to localize your Laravel routes.
 - Redirects `/fallback_locale/...` to `/...` with 301 if needed
 - Works with Laravel 10, 11, and 12
 
-## Installation
+## 📚 Installation
 
 Install the package via Composer:
 
@@ -24,16 +24,15 @@ Install the package via Composer:
 composer require alexwaha/laravel-multilang-routes
 ```
 
-Publish package config file:
+Publish the configuration file:
+
 ```bash
-php artisan vendor:publish --tag=multilang-localize-config
+php artisan vendor:publish --tag=multilang-routes-config
 ```
 
-This will publish the config file to `config/multilang-routes.php`:
+This will create `config/multilang-routes.php`.
 
-You can customize the list of supported languages and their URL slugs.
-
-## Usage
+## 🚀 Usage
 
 Define your routes using the `localizedRoutes` macro.
 
@@ -65,21 +64,23 @@ Route::localizedRoutes(function () {
 }, ['web']);
 ```
 
-### Checking if Route is Already Localized
-You can easily check if your route name is already localized before generating or using it.
-```php
-@if (Route::isLocalized($name))
-    // It returns TRUE if The route name is already localized (e.g., "en.blog.index")
-@endif
-```
-
 This automatically generates localized routes like:
 
-- `/en/about`
-- `/es/about`
-- `/de/about`
+- `/en/blog`
+- `/es/blog`
+- `/de/blog`
 
 >The slug in the URL is required for the `setLocale` middleware, which changes the application language based on the `locale` slug.
+
+
+## 🧩 Checking if Route is Localized
+You can easily check if your route name is already localized:
+
+```php
+@if (Route::isLocalized($name))
+    // The route name is already localized (e.g., "en.blog.index")
+@endif
+```
 
 ### Blade usage
 
@@ -95,7 +96,8 @@ Or generate URLs with parameters:
 <a href="{{ Route::localize('blog.show', ['post' => $post]) }}">View Post</a>
 ```
 
-### Middleware: `SetLocaleMiddleware`
+## 🛡️ Middleware
+### 🧩 `localize.setLocale`
 Middleware to automatically detect and set the application locale based on the first segment of the URL.
 
 Registered alias as `localize.setLocale`
@@ -140,13 +142,14 @@ Route::localizedRoutes(function () {
 ```
 This is a simpler and more compact approach, especially useful for smaller projects.
 
-### Middleware: `PaginatedMiddleware`
+### 🧩 `PaginatedMiddleware`
 Middleware that transforms paginated URLs by cleaning query parameters.
 
 Registered alias as `localize.paginated`.
 
 When a paginated route like `/page/{page?}` is used:
 
+🛠 **Note**:
 * It ensures that the first page `blog/page/1` does not have a query string or URL segment like `/page/1`.
 * Instead, the first page URL is clean, such as `/blog`, improving SEO and URL readability.
 * If the user accesses `blog/page/2`, `blog/page/3`, etc., the page number remains in the URL.
@@ -172,7 +175,7 @@ If a user visits a URL with the default fallback locale (e.g., `/en/about` when 
 This ensures clean URLs for your default language.
 
 
-### Configuration
+## ⚙️ Configuration
 
 You can configure which languages are available and their corresponding URL slugs inside the `config/multilang-routes.php` file.
 
@@ -225,43 +228,26 @@ interface LanguageProviderInterface
 ```
 This gives you the flexibility to load languages from the database, API, or any other source.
 
-Example of `app/Providers/DatabaseLanguageProvider.php`
+---
 
-```php
-<?php
+## 📂 Examples
 
-namespace App\Providers;
+You can find practical examples inside the [examples](./examples) folder:
 
-use App\Contracts\LanguageProviderInterface;
-use App\Contracts\LanguageInterface;
-use App\Models\Language;
+- [ExampleController.php](examples/ExampleController.php)  
+  Simple controller with paginated navigation.
 
-class DatabaseLanguageProvider implements LanguageProviderInterface
-{
-    /**
-     * @return array<LanguageInterface>
-     */
-    public function getLanguages(): array
-    {
-        $languages = Language::all();
+- [DatabaseLanguageProvider.php](examples/DatabaseLanguageProvider.php)  
+  Custom Language Provider loading languages from database.
 
-        return array_map(function (Language $language) {
-            return new \Alexwaha\Localize\Language(
-                $language->locale,
-                $language->slug,
-                $language->is_default
-            );
-        }, $languages->all());
-    }
+- [RoutesExample.php](examples/RoutesExample.php)  
+  Localized routes registration example.
 
-    public function getLocaleBySegment(?string $segment = null): string
-    {
-        $language = Language::where('slug', $segment)->first();
+- [pagination.blade.php](examples/pagination.blade.php)  
+  Blade pagination rendering.
 
-        return $language?->locale ?? config('app.fallback_locale');
-    }
-}
-```
+---
+
 
 ## Requirements
 
