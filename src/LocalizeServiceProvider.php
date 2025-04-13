@@ -52,15 +52,14 @@ class LocalizeServiceProvider extends ServiceProvider
             ->aliasMiddleware('localize.setLocale', SetLocaleMiddleware::class)
             ->aliasMiddleware('localize.paginated', PaginatedMiddleware::class);
 
-        $router->macro('localize', function (string $name, array $parameters = [], bool $paginated = false) use ($app) {
+        $router->macro('localize', function (string $name, array $parameters = []) use ($app) {
             return $app->make(LocalizeUrlGenerator::class)
-                ->generate($name, $parameters, $paginated);
+                ->generate($name, $parameters);
         });
 
-        $router->macro('hasLocalize', function (string $name) use ($router, $app): bool {
-            $localizedName = $app->getLocale().'.'.$name;
-
-            return $router->has($localizedName) || $router->has($name);
+        $router->macro('isLocalized', function (string $name) use ($app): bool {
+            return $app->make(LocalizeUrlGenerator::class)
+                ->isLocalized($name);
         });
 
         $router->macro('localizedRoutes', function (Closure $callback, array $middleware = []) {

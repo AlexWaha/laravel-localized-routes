@@ -12,25 +12,38 @@
 
 namespace Alexwaha\Localize;
 
-use Illuminate\Contracts\Config\Repository as ConfigContract;
+use Illuminate\Contracts\Config\Repository as Config;
 use Illuminate\Contracts\Routing\UrlGenerator as UrlGeneratorContract;
+use Illuminate\Routing\Router;
+use Illuminate\Routing\UrlGenerator;
 use Illuminate\Support\Str;
 
 class LocalizeUrlGenerator
 {
+    public Router $router;
+
+    public Config $config;
+
+    public string $locale;
+
+    /**
+     * @var UrlGenerator
+     */
     public UrlGeneratorContract $urlGenerator;
 
-    public ConfigContract $config;
-
-    public function __construct(UrlGeneratorContract $urlGenerator, ConfigContract $config)
+    public function __construct(Router $router, Config $config, UrlGeneratorContract $urlGenerator)
     {
-        $this->urlGenerator = $urlGenerator;
+        $this->router = $router;
         $this->config = $config;
+        $this->locale = $this->config->get('app.locale');
+        $this->urlGenerator = $urlGenerator;
     }
 
-    public function generate(string $name, array $parameters = [], bool $paginated = false): string
+    public function generate(string $name, array $parameters = []): string
     {
-        $locale = $this->config->get('app.locale');
+        if (! $this->isLocalized($name)) {
+            $name = $this->locale.'.'.$name;
+        }
 
         if (isset($parameters['page'])) {
             $page = (int) $parameters['page'];
@@ -39,22 +52,22 @@ class LocalizeUrlGenerator
                 unset($parameters['page']);
 
                 if (Str::endsWith($name, '.paginated')) {
-                    $name = Str::replace('.paginated', '.index', $name);
-                }
-            } else {
-                if (Str::endsWith($name, '.index')) {
-                    $name = Str::replaceLast('.index', '.paginated', $name);
+                    $name = Str::replaceLast('.paginated', '.index', $name);
                 }
             }
 
+            if ($page > 1 && Str::endsWith($name, '.index')) {
+                $name = Str::replaceLast('.index', '.paginated', $name);
+            }
         }
 
-        if (! $paginated) {
-            $name = $locale.'.'.$name;
-        }
-
-        $this->urlGenerator->defaults(['locale' => $locale]);
+        $this->urlGenerator->defaults(['locale' => $this->locale]);
 
         return $this->urlGenerator->route($name, $parameters);
+    }
+
+    public function isLocalized(string $name): bool
+    {
+        return Str::startsWith($name, $this->locale.'.');
     }
 }

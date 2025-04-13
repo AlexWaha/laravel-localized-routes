@@ -65,6 +65,14 @@ Route::localizedRoutes(function () {
 }, ['web']);
 ```
 
+### Checking if Route is Already Localized
+You can easily check if your route name is already localized before generating or using it.
+```php
+@if (Route::isLocalized($name))
+    // It returns TRUE if The route name is already localized (e.g., "en.blog.index")
+@endif
+```
+
 This automatically generates localized routes like:
 
 - `/en/about`
@@ -87,7 +95,7 @@ Or generate URLs with parameters:
 <a href="{{ Route::localize('blog.show', ['post' => $post]) }}">View Post</a>
 ```
 
-### Middleware: `localize.setLocale`
+### Middleware: `SetLocaleMiddleware`
 Middleware to automatically detect and set the application locale based on the first segment of the URL.
 
 Registered alias as `localize.setLocale`
@@ -132,7 +140,17 @@ Route::localizedRoutes(function () {
 ```
 This is a simpler and more compact approach, especially useful for smaller projects.
 
-### Pagination-Aware Route Generation
+### Middleware: `PaginatedMiddleware`
+Middleware that transforms paginated URLs by cleaning query parameters.
+
+Registered alias as `localize.paginated`.
+
+When a paginated route like `/page/{page?}` is used:
+
+* It ensures that the first page `blog/page/1` does not have a query string or URL segment like `/page/1`.
+* Instead, the first page URL is clean, such as `/blog`, improving SEO and URL readability.
+* If the user accesses `blog/page/2`, `blog/page/3`, etc., the page number remains in the URL.
+
 When building localized URLs with pagination, you can define your routes like this:
 ```php
 use Illuminate\Support\Facades\Route;
@@ -143,7 +161,7 @@ Route::localizedRoutes(function () {
         Route::get('/page/{page?}', [BlogController::class, 'index'])->name('paginated');
         Route::get('/{post}', [BlogController::class, 'show'])->name('show');
     });
-}, ['web', 'localize.setLocale']);
+}, ['web', 'localize.setLocale', 'localize.paginated']);
 
 ```
 
@@ -202,7 +220,7 @@ Your custom provider should implement:
 interface LanguageProviderInterface
 {
     public function getLanguages(): array;
-    public function getLocaleBySegment(string $segment): string;
+    public function getLocaleBySegment(?string $segment = null): string;
 }
 ```
 This gives you the flexibility to load languages from the database, API, or any other source.
@@ -236,7 +254,7 @@ class DatabaseLanguageProvider implements LanguageProviderInterface
         }, $languages->all());
     }
 
-    public function getLocaleBySegment(string $segment): string
+    public function getLocaleBySegment(?string $segment = null): string
     {
         $language = Language::where('slug', $segment)->first();
 

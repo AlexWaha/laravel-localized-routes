@@ -17,6 +17,7 @@ use Illuminate\Contracts\Routing\UrlGenerator as UrlGeneratorContract;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Redirector;
 use Illuminate\Routing\UrlGenerator;
+use Illuminate\Support\Str;
 use Symfony\Component\HttpFoundation\Response;
 
 /**
@@ -47,7 +48,7 @@ class PaginatedMiddleware
 
         $currentRouteName = $request->route()->getName();
 
-        if ($page == 1 && str_ends_with($currentRouteName, 'paginated')) {
+        if ($page == 1 && Str::endsWith($currentRouteName, 'paginated')) {
             $canonicalRouteName = substr($currentRouteName, 0, -strlen('paginated')).'index';
 
             $routeParams = $request->route()->parameters();
